@@ -3,4 +3,4 @@
 /.dotty-ide-artifact
 /.dotty-ide.json
 /.idea
-/target
+target
