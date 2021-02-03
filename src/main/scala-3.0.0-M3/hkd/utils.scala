@@ -17,7 +17,7 @@ def iterErrMacro[T: Type](using ctx: Quotes): Expr[Nothing] =
 
 inline def customErr[U](s: String): Nothing = ${customErrMacro[U]('s)}
 def customErrMacro[U: Type](s: Expr[String])(using ctx: Quotes): Nothing = 
-    ctx.reflect.report.throwError(s"${s.unliftOrError} ${Type.show[U]}")
+    ctx.reflect.report.throwError(s"${s.valueOrError} ${Type.show[U]}")
 
 
 
