@@ -2,17 +2,17 @@ package tc
 import scala.deriving._
 import scala.quoted._
 
-inline def tabulateProduct[U[f[_]], F[_], Labels](gain: [A] => Rep[U, A] => F[A], create: Product => U[F]): U[F] = 
-  ${ tabulateMacro[U, F, Labels]('gain, 'create) }
+inline def tabulateProduct[U[f[_]], F[_], Labels, Elems](gain: [A] => Rep[U, A] => F[A], create: Product => U[F]): U[F] = 
+  ${ tabulateMacro[U, F, Labels, Elems]('gain, 'create) }
 
-def tabulateMacro[U[f[_]]: Type, F[_]: Type, Labels: Type](
+def tabulateMacro[U[f[_]]: Type, F[_]: Type, Labels: Type, Elems: Type](
   gain: Expr[[A] => Rep[U, A] => F[A]],
   create: Expr[Product => U[F]]
-  )(using qtx: Quotes): Expr[U[F]] = TabulateMacro[U, F, Labels](gain, create).result
+  )(using qtx: Quotes): Expr[U[F]] = TabulateMacro[U, F, Labels, Elems](gain, create).result
 
 class Kek[F[_]](val zuzu: Int)
 
-class TabulateMacro[U[f[_]]: Type, F[_]: Type, Labels: Type](
+class TabulateMacro[U[f[_]]: Type, F[_]: Type, Labels: Type, Elems: Type](
   gain: Expr[[A] => Rep[U, A] => F[A]],
   create: Expr[Product => U[F]],  
   )(using ctx: Quotes):
@@ -24,29 +24,39 @@ class TabulateMacro[U[f[_]]: Type, F[_]: Type, Labels: Type](
 
     val s = s"$labels $repr"
     val tree = '{[F[_]] => (u: Kek[F]) => u.zuzu }.asTerm
-    val elems = Expr.ofTupleFromSeq(labels.map(labeledRep))
+    val elems = Expr.ofTupleFromSeq(labels.zip(elemTypes).map{ case (label, t) =>
+       type X
+       given Type[X] = t.asType.asInstanceOf[Type[X]]
+       labeledRep[X](label)
+    })
 
 
     u match 
       case _ => '{
           println(${Expr(s)})
-          println(${Expr(tree.toString)})
           println($elems)
-          null.asInstanceOf[U[F]]
+          $create($elems)
         }
 
-  private def labeledRep(label: String) = 
-    val t: Tree = Select(Ident(TermRef(TypeRepr.of[U[F]], "u")), sym(label))
-    val expr = t.asExpr
-    '{ [F[_]] => (u : $U[F]) => $expr }
+  private def labeledRep[X: Type](label: String): Expr[F[X]] = 
+    def getBody[G[_]: Type](t: Term): Expr[G[X]] = 
+      val res = Select.unique(t, label).asExpr
+      '{ $res.asInstanceOf[G[X]] }
+    '{ $gain[X]([G[_]] => (u : U[G]) => ${getBody[G]('u.asTerm)}) }
 
-  private def sym(name: String) = 
-    Symbol.newVal(Symbol.spliceOwner, name, TypeRepr.of[Any], Flags.EmptyFlags, Symbol.noSymbol)  
 
   private def labels: Vector[String] = 
     val Empty = TypeRepr.of[EmptyTuple].widen
     Vector.unfold(TypeRepr.of[Labels].dealias){
       case AppliedType(_, List(ConstantType(StringConstant(s)), rest)) => Some((s, rest.widen))
+      case Empty => None
+      case t => report.throwError(s"expecting string constant tuple, got $t")
+    }
+
+  private def elemTypes: Vector[TypeRepr] = 
+    val Empty = TypeRepr.of[EmptyTuple].widen
+    Vector.unfold(TypeRepr.of[Elems].dealias){
+      case AppliedType(_, List(t, rest)) => Some((t, rest.widen))
       case Empty => None
       case t => report.throwError(s"expecting string constant tuple, got $t")
     }

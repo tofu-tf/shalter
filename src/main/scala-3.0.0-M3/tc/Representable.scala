@@ -35,7 +35,7 @@ trait RepresentableK[U[f[_]]] extends ApplicativeK[U]:
 object RepresentableK:
   inline def derived[U[f[_]]]: RepresentableK[U] = new  {
     def tabulate[F[_]](gain: [A] => Rep[U, A] => F[A]) = summonFrom{
-      case p: Mirror.ProductOf[U[F]] => tabulateProduct[U, F, p.MirroredElemLabels](gain, p.fromProduct)
+      case p: Mirror.ProductOf[U[F]] => tabulateProduct[U, F, p.MirroredElemLabels, p.MirroredElemTypes](gain, p.fromProduct)
       case _ => error("can handle only case classes at the moment")
     }
   }
