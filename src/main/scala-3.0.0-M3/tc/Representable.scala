@@ -1,8 +1,8 @@
 package tc
-import scala.compiletime._
-import scala.deriving._
-import scala.quoted._
+
 import hkd._
+import derived.representable.deriveRepresentable
+import derived.craft.deriveCraft
 
 type Rep[-U[f[_]], A] = [F[_]] => U[F] => F[A]
 
@@ -33,58 +33,23 @@ trait RepresentableK[U[f[_]]] extends ApplicativeK[U]:
       tabulate([A] => (rep: Rep[U, A]) => f[A](rep(left) , rep(right)))
 
 object RepresentableK: 
-  inline def derived[U[f[_]] <: Product]: RepresentableK[U] = new  {
-    def tabulate[F[_]](gain: [A] => Rep[U, A] => F[A]) = summonFrom{
-      case p: Mirror.ProductOf[U[F]] => 
-          val pack = repPack[U]
-          p.fromProduct(new {
-              def productArity = pack.size
-              def canEqual(that: Any) = true
-              def productElement(i: Int) = 
-                type R[f[_]]
-                val rep = pack(i).asInstanceOf[RepresentableK[R]]
-                rep.tabulate([A] => (r: Rep[R, A]) => 
-                  gain[A]([G[_]] => (ug: U[G]) => ug.productElement(i).asInstanceOf[G[A]]))
-          })
-      case _ => error("can handle only case classes at the moment")
-    }
-  }
+  inline def derived[U[f[_]] <: Product]: RepresentableK[U] = deriveRepresentable
 
+trait TraversableK[U[f[_]]] extends FunctorK[U]:
+  extension[F[_], G[+_], H[_]](uf: U[F])
+    def traverseK(f: [A] => F[A] => G[H[A]])(using Applicative[G]): G[U[H]]
 
-inline def repPack[U[_[_]]]: Vector[RepresentableK[?]] = 
-  type F[_]
-  summonFrom{
-    case p: Mirror.ProductOf[U[F]] => repIter[F, Widen[p.MirroredElemTypes]]
-  }
+  extension[F[+_], G[_]](uf: U[[A] =>> F[G[A]]])
+    def sequenceK(using Applicative[F]): F[U[G]] = uf.traverseK([A] => (a : F[G[A]]) => a)
 
-inline def repIter[F[_], P]: Vector[RepresentableK[?]] = 
-  inline erasedValue[P] match 
-    case _ : (t *: ts) => elemRep[F, t] +: repIter[F, ts]
-    case _ : EmptyTuple   => Vector()
-    case t => customErr[P]("expecting a tuple got ")
+trait Craft[U[f[_]]] extends RepresentableK[U] with TraversableK[U]:
+  def craft[F[+_]: Applicative, G[_]](gain: [A] => Rep[U, A] => F[G[A]]): F[U[G]]
 
-inline def elemRep[F[_], T]: RepresentableK[?] = summonFrom{
-  case ur : UnapplyRep[F, T] => ur.representable
-}
+  def tabulate[F[_]](gain: [A] => Rep[U, A] => F[A]): U[F] = craft[Identity, F](gain)
 
-trait UnapplyRep[F[_], T]{
-  type U[f[_]]
-  def representable: RepresentableK[U]
-  def eq: T =:= U[F]
-}
+  extension[F[_], G[+_], H[_]](uf: U[F])
+    def traverseK(f: [A] => F[A] => G[H[A]])(using Applicative[G]): G[U[H]] = 
+      craft[G, H]([A] => (frep: Rep[U, A]) => f(frep(uf)))
 
-object UnapplyRep:
-    given [F[_], A] : UnapplyRep[F, F[A]] with
-      type U[f[_]] = f[A]
-      def representable = monoRepresentable
-      def eq = summon[U[F] =:= F[A]]
-
-    given [V[f[_]], F[_]] (using V: RepresentableK[V]): UnapplyRep[F, V[F]] with
-      type U[f[_]] = V[f]
-      def representable = V
-      def eq = summon[U[F] =:= V[F]]
-
-
-given monoRepresentable[X]: RepresentableK[[F[_]] =>> F[X]] with
-  def tabulate[F[_]](gain: [A] => ([G[_]] => G[X] => G[A]) => F[A]) = gain([G[_]] => (gx: G[X]) => gx)
-
+object Craft:
+  inline def derived[U[f[_]] <: Product]: Craft[U] = deriveCraft    

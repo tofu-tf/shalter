@@ -1,13 +1,15 @@
 package hkd
 import tc._
 import scala.deriving._
+import scala.language.experimental.namedTypeArguments
+
 
 type Identity[+A] = A
 
 case class Noxarpe[F[_]](
   name: F[String],
   age: F[Int],
-) derives RepresentableK
+) derives Craft
 
 
 case class Jupale[F[_]](
@@ -15,17 +17,15 @@ case class Jupale[F[_]](
   ulpu: Noxarpe[F],
   jimma: F[Vector[String]],
   rec: F[() => Jupale[Identity]]
-) derives RepresentableK
+) derives Craft
 
 
-// given RepresentableK[Noxarpe] with 
-//   def tabulate[F[_]](f: [A] => Rep[Noxarpe, A] => F[A]): Noxarpe[F] = 
-//     Noxarpe(f([f[_]] => (n: Noxarpe[f]) => n.name), f([f[_]] => (n: Noxarpe[f]) => n.age) )
+// given Craft[Noxarpe] with 
+//   def craft[F[+_]: Applicative, G[_]](f: [A] => Rep[Noxarpe, A] => F[G[A]]): F[Noxarpe[G]] = 
+//     f([f[_]] => (n: Noxarpe[f]) => n.name).map2(f([f[_]] => (n: Noxarpe[f]) => n.age))(Noxarpe(_, _))
+    
 
 @main def gogogo =
-  // println(showType[String])
-  // println(matchCaseClass[String])
-  // println(matchCaseClass[Noxarpe[Identity]])
   val nox = Noxarpe[Identity]("lol", 2)
   lazy val jup: Jupale[Identity] = Jupale(
     args = nox,
@@ -34,11 +34,14 @@ case class Jupale[F[_]](
     rec = () => jup,
   )
 
-  val lsts = nox.mapK([A] => (a: A) => List(a))
+  val noxs = nox.mapK([A] => (a: A) => List(a))
   val jups = jup.mapK[Identity, [A] =>> (A, Int)]([A] => (a: A) => (a, 1))
 
-  println(lsts)
+  val noxis = Noxarpe[[A] =>> Vector[Identity[A]]](
+    name = Vector("Oleg", "Katya"),
+    age = Vector(36, 30)
+  ).sequenceK[Vector, Identity]
+
+  println(noxs)
   println(jups)
-
-
-
+  noxis.foreach(println)
