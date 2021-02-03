@@ -18,6 +18,7 @@ class TabulateMacro[U[f[_]]: Type, F[_]: Type, Labels: Type, Elems: Type](
   )(using ctx: Quotes):
   import ctx.reflect.{_, given}
   private val U = Type.of[U]
+  private val F = Type.of[F]
   def result: Expr[U[F]] = 
     val u = Type.of[U]
     val repr = TypeRepr.of[U[F]]
@@ -39,10 +40,10 @@ class TabulateMacro[U[f[_]]: Type, F[_]: Type, Labels: Type, Elems: Type](
         }
 
   private def labeledRep[X: Type](label: String): Expr[F[X]] = 
-    def getBody[G[_]: Type](t: Term): Expr[G[X]] = 
-      val res = Select.unique(t, label).asExpr
-      '{ $res.asInstanceOf[G[X]] }
-    '{ $gain[X]([G[_]] => (u : U[G]) => ${getBody[G]('u.asTerm)}) }
+    def getBody[G[_]: Type](t: Expr[U[G]]): Expr[G[X]] = 
+      Select.unique(t.asTerm, label).asExpr.asExprOf[G[X]]
+    
+    '{ $gain[X]([G[_]] => (u : U[G]) => ${getBody[G]('u)}) }
 
 
   private def labels: Vector[String] = 
@@ -56,7 +57,7 @@ class TabulateMacro[U[f[_]]: Type, F[_]: Type, Labels: Type, Elems: Type](
   private def elemTypes: Vector[TypeRepr] = 
     val Empty = TypeRepr.of[EmptyTuple].widen
     Vector.unfold(TypeRepr.of[Elems].dealias){
-      case AppliedType(_, List(t, rest)) => Some((t, rest.widen))
+      case AppliedType(_, List(AppliedType(_, List(t)), rest)) => Some((t, rest.widen))
       case Empty => None
-      case t => report.throwError(s"expecting string constant tuple, got $t")
+      case t => report.throwError(s"expecting F[X] tuple, got $t")
     }
