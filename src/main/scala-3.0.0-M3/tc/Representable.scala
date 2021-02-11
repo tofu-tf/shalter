@@ -1,8 +1,7 @@
 package tc
 
 import hkd._
-import derived.representable.deriveRepresentable
-import derived.craft.deriveCraft
+import derived.{deriveRepresentable, deriveCraft}
 
 type Rep[-U[f[_]], A] = [F[_]] => U[F] => F[A]
 
@@ -15,9 +14,17 @@ trait ApplyK[U[f[_]]] extends FunctorK[U]:
   extension [F[_], G[_], H[_]] (left: U[F])
     def map2K(right: U[G])(f: [A] => (F[A], G[A]) => H[A]): U[H]
 
-trait ApplicativeK[U[f[_]]] extends ApplyK[U]:
+    def map2Given(right: U[G])(f: [A] => (F[A]) => G[A] ?=> H[A]): U[H] = 
+      left.map2K(right)([A] => (fa: F[A], ga: G[A]) => {
+          given G[A] = ga
+          f(fa)        
+      })
+    
+
+trait PureK[U[f[_]]]:
   def pureK[F[_]](gen: [A] => () => F[A]): U[F]
 
+trait ApplicativeK[U[f[_]]] extends ApplyK[U] with PureK[U]:
   extension [F[_], G[_]] (obj: U[F])
     override def mapK(f: [A] => F[A] => G[A]): U[G] = 
       obj.map2K[F, [A] =>> Unit, G](pureK([A] => () => ()))([A] => (x: F[A], y: Unit) => f(x))

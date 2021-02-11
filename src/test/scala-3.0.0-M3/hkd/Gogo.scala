@@ -1,6 +1,5 @@
 package hkd
 import tc._
-import scala.deriving._
 import scala.language.experimental.namedTypeArguments
 
 
@@ -19,13 +18,21 @@ case class Jupale[F[_]](
   rec: F[() => Jupale[Identity]]
 ) derives Craft
 
+given Names[Noxarpe] = names[Noxarpe]
+
+
+
+// trait Lol[F[_]] derives RepresentableK{
+  
+// }
+
 
 // given Craft[Noxarpe] with 
 //   def craft[F[+_]: Applicative, G[_]](f: [A] => Rep[Noxarpe, A] => F[G[A]]): F[Noxarpe[G]] = 
 //     f([f[_]] => (n: Noxarpe[f]) => n.name).map2(f([f[_]] => (n: Noxarpe[f]) => n.age))(Noxarpe(_, _))
     
 
-@main def gogogo =
+def gogogo =
   val nox = Noxarpe[Identity]("lol", 2)
   lazy val jup: Jupale[Identity] = Jupale(
     args = nox,
@@ -36,6 +43,8 @@ case class Jupale[F[_]](
 
   val noxs = nox.mapK([A] => (a: A) => List(a))
   val jups = jup.mapK[Identity, [A] =>> (A, Int)]([A] => (a: A) => (a, 1))
+
+  println(summon[Names[Noxarpe]])
 
   val noxis = Noxarpe[[A] =>> Vector[Identity[A]]](
     name = Vector("Oleg", "Katya"),

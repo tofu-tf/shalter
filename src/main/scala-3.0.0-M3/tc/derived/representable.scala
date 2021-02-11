@@ -1,6 +1,5 @@
 package tc
 package derived
-package representable
 import hkd._
 
 
@@ -29,6 +28,7 @@ inline def repPack[U[_[_]]]: Vector[RepresentableK[?]] =
   type F[_]
   summonFrom{
     case p: Mirror.ProductOf[U[F]] => repIter[F, Widen[p.MirroredElemTypes]]
+    case _ => Vector()
   }
 
 inline def repIter[F[_], P]: Vector[RepresentableK[?]] = 
@@ -59,6 +59,6 @@ object UnapplyRep:
     def eq = summon[U[F] =:= V[F]]
 
 
-given monoCraft[X]: Craft[[F[_]] =>> F[X]] with
-  def craft[F[+_]: Applicative, G[_]](gain: [A] => ([G[_]] => G[X] => G[A]) => F[G[A]]): F[G[X]] = 
+given monoRepresentable[X]: RepresentableK[[F[_]] =>> F[X]] with
+  def tabulate[G[_]](gain: [A] => ([F[_]] => F[X] => F[A]) => G[A]): G[X] = 
     gain([G[_]] => (x: G[X]) => x)
