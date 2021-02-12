@@ -5,7 +5,9 @@ import _root_.data.const.Const
 import scala.language.experimental.namedTypeArguments
 import scala.annotation.unchecked.uncheckedVariance
 
+
 type Tag = String
+type Encoder[_]
 
 case class PersonOf[F[_]](
     firstName: F[String],
@@ -27,6 +29,12 @@ given [Data[f[_]]](using HKD: Craft[Data]): Monoid[Data[Option]] with
 
 trait ShowK[F[_]]:
     given showK[A: Show]: Show[F[A]]
+
+trait EqK[F[_]]:
+    given eqK[A: Eq]: Eq[F[A]]
+
+trait EncoderK[F[_]]:
+    given encoderK[A: Encoder]: Encoder[F[A]]    
 
 object ShowK:
     given ShowK[Identity] with 
