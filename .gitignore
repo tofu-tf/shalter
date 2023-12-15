@@ -3,4 +3,6 @@
 /.dotty-ide.json
 /.idea
 .bloop
-target
+.metals
+target/
+*/target/**

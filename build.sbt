@@ -1,29 +1,22 @@
-val scala2Version = "2.13.4"
-val scala3Version = "3.0.0-M3"
+val scala3Version = "3.3.1"
 
-
-name := "data-lab"
+name := "socket"
 version := "0.0.7"
 
 
 // To make the default compiler and REPL use Dotty
 scalaVersion := scala3Version
-
-// To cross compile with Dotty and Scala 2
-crossScalaVersions := Seq(scala3Version, scala2Version)
-libraryDependencies += ("org.typelevel"                 %% "cats-core"   % "2.3.1").withSources().withDottyCompat(scalaVersion.value)
-libraryDependencies += ("org.typelevel"                 %% "cats-free"   % "2.3.1").withSources().withDottyCompat(scalaVersion.value)
-libraryDependencies += ("org.typelevel"                 %% "cats-effect" % "2.3.1").withSources().withDottyCompat(scalaVersion.value)
-libraryDependencies += ("ru.tinkoff"                    %% "tofu"        % "0.9.0").withSources().withDottyCompat(scalaVersion.value)
-
-
-
+crossScalaVersions := Seq(scala3Version)
+libraryDependencies += ("org.typelevel"                 %% "cats-core"   % "2.10.0").cross(CrossVersion.for3Use2_13)
+libraryDependencies += ("org.typelevel"                 %% "cats-free"   % "2.10.0").cross(CrossVersion.for3Use2_13)
+libraryDependencies += ("org.typelevel"                 %% "cats-effect" % "2.5.5").cross(CrossVersion.for3Use2_13)
+libraryDependencies += ("ru.tinkoff"                    %% "tofu"        % "0.9.0").cross(CrossVersion.for3Use2_13)
 
 publishMavenStyle := true
 scmInfo := Some(
     ScmInfo(
-      url("https://github.com/Odomontois/data-lab"),
-      "git@github.com:manatki/derevo.git"
+      url("https://github.com/tofu-tf/socket"),
+      "git@github.com:tofu-tf/socket.git"
     )
   )
 
@@ -39,6 +32,12 @@ developers := List(
       "Oleg Nizhnik",
       "odomontois@gmail.com",
       url("https://github.com/odomontois")
+    ),
+    Developer(
+      "danslapman",
+      "Daniil Smirnov",
+      "danslapman@gmail.com",
+      url("https://github.com/danslapman")
     )
   )
 
