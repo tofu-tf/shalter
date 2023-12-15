@@ -1,3 +1,4 @@
+.DS_Store
 /.bsp
 /.dotty-ide-artifact
 /.dotty-ide.json
@@ -6,3 +7,4 @@
 .metals
 target/
 */target/**
+**/project/metals.sbt
