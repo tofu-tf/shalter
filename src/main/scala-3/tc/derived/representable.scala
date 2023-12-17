@@ -1,15 +1,18 @@
-package tc
-package derived
-import hkd._
+package tc.derived
 
+import cats.arrow.FunctionK
+import cats.data.Tuple2K
+import tc.*
+import hkd.*
 
-import scala.compiletime._
-import scala.deriving._
+import scala.compiletime.*
+import scala.deriving.*
 
-inline def deriveRepresentable[U[f[_]] <: Product]: RepresentableK[U] = 
+inline def deriveRepresentable[U[_[_]] <: Product]: RepresentableK[U] = 
     val pack = repPack[U].toArray
-    new { def tabulate[F[_]](gain: [A] => Rep[U, A] => F[A]) = summonFrom{
-      case p: Mirror.ProductOf[U[F]] =>           
+    new RepresentableK[U] {
+      def tabulate[F[_]](gain: [A] => Rep[U, A] => F[A]) = summonFrom {
+        case p: Mirror.ProductOf[U[F]] =>           
           p.fromProduct(new {
               def productArity = pack.length
               def canEqual(that: Any) = true
@@ -19,15 +22,19 @@ inline def deriveRepresentable[U[f[_]] <: Product]: RepresentableK[U] =
                 rep.tabulate([A] => (r: Rep[R, A]) => 
                   gain[A]([G[_]] => (ug: U[G]) => r(ug.productElement(i).asInstanceOf[R[G]])))
           })
-      case _ => error("can handle only case classes at the moment")
+        case _ => error("can handle only case classes at the moment")
+      }
+
+      def mapK[F[_], G[_]](af: U[F])(fk: FunctionK[F, G]): U[G] = ???
+
+      override def productK[F[_], G[_]](af: U[F], ag: U[G]): U[[Z] =>> Tuple2K[F, G, Z]] = ???
     }
-  }
 
 
 inline def repPack[U[_[_]]]: Vector[RepresentableK[?]] = 
   type F[_]
   summonFrom{
-    case p: Mirror.ProductOf[U[F]] => repIter[F, Widen[p.MirroredElemTypes]]
+    case p: Mirror.ProductOf[U[F]] => repIter[F, p.MirroredElemTypes]
     case _ => Vector()
   }
 
@@ -42,7 +49,7 @@ inline def elemRep[F[_], T]: RepresentableK[?] = summonFrom{
 }
 
 trait UnapplyRep[F[_], T]{
-  type U[f[_]]
+  type U[_[_]]
   def representable: RepresentableK[U]
   def eq: T =:= U[F]
 }
@@ -62,3 +69,7 @@ object UnapplyRep:
 given monoRepresentable[X]: RepresentableK[[F[_]] =>> F[X]] with
   def tabulate[G[_]](gain: [A] => ([F[_]] => F[X] => F[A]) => G[A]): G[X] = 
     gain([G[_]] => (x: G[X]) => x)
+
+  def mapK[F[_], G[_]](af: F[X])(fk: FunctionK[F, G]): G[X] = ???
+
+  def productK[F[_], G[_]](af: F[X], ag: G[X]): Tuple2K[F, G, X] = ???

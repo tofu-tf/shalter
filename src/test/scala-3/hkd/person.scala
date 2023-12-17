@@ -1,10 +1,10 @@
 package hkd
+
+import _root_.data.Const
 import tc._
 import cats._
-import _root_.data.const.Const
-import scala.language.experimental.namedTypeArguments
-import scala.annotation.unchecked.uncheckedVariance
-
+import cats.data.Tuple2K
+import cats.tagless.syntax.all.*
 
 type Tag = String
 type Encoder[_]
@@ -18,10 +18,10 @@ case class PersonOf[F[_]](
 
 
 
-def nones[Data[f[_]]](using HKD: PureK[Data]): Data[Option] = 
+def nones[Data[_[_]]](using HKD: PureK[Data]): Data[Option] =
     HKD.pureK([A] => () => None)
 
-given [Data[f[_]]](using HKD: Craft[Data]): Monoid[Data[Option]] with
+given [Data[_[_]]](using HKD: Craft[Data]): Monoid[Data[Option]] with
     val empty = HKD.pureK([A] => () => None)
 
     def combine(x: Data[Option], y: Data[Option]): Data[Option] = 
@@ -46,22 +46,20 @@ object ShowK:
     given [A: Show] : ShowK[[B] =>> Either[A, B]] with
         def showK[B: Show] = implicitly
 
-def hkdToVector[G[+_], Data[f[_]]](xs: Data[G])
-  (using TraversableK[Data]): Vector[G[Any]] = 
+def hkdToVector[G[+_], Data[_[_]]](xs: Data[G])(using TraversableK[Data]): Vector[G[Any]] =
     xs.traverseK(
     	[A] => (x:  G[A]) => Const[Vector[G[Any]]](Vector(x))
     ).value
 
 import cats.syntax.show.given
 
-given [Data[f[_]] <: Product: Craft, F[_]]( using
+given [Data[_[_]] <: Product: Craft, F[_]](using
     names: Data[Name], 
     shows: Data[Show],
     showK: ShowK[F]): Show[Data[F]] with
-    def show(xs: Data[F]): String = 
-        import showK.given
-        val fields: Data[[A] =>> String] = 
-            xs.map2Given(shows)([A] => (fa: F[A]) => (x: Show[A]) ?=> fa.show)
+    def show(xs: Data[F]): String =
+        val fields: Data[[A] =>> String] =
+          xs.map2K(shows)([A] => (fa: F[A], sh: Show[A]) => showK.showK(using sh).show(fa))
         val prefix = xs.productPrefix
         val pairs: Data[[A] =>> String] = 
             names.map2K(fields)([A] => (name: String, fld: String) => s"$name: $fld")

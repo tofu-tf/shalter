@@ -7,8 +7,8 @@ version := "0.0.7"
 // To make the default compiler and REPL use Dotty
 scalaVersion := scala3Version
 crossScalaVersions := Seq(scala3Version)
-libraryDependencies += ("org.typelevel"                 %% "cats-core"   % "2.10.0").cross(CrossVersion.for3Use2_13)
-libraryDependencies += ("org.typelevel"                 %% "cats-free"   % "2.10.0").cross(CrossVersion.for3Use2_13)
+libraryDependencies += ("org.typelevel" %% "cats-core" % "2.10.0")
+libraryDependencies += ("org.typelevel" %% "cats-tagless-core" % "0.15.0")
 
 publishMavenStyle := true
 scmInfo := Some(
@@ -44,5 +44,6 @@ credentials ++= ((Path.userHome / ".sbt" / "odo.credentials") :: Nil)
     .map(Credentials.apply)
 
 pgpSecretRing := Path.userHome / ".gnupg" / "secring.gpg"
-organization := "org.manatki"
+organization := "tf.tofu"
+organizationName := "Tofu"
 licenses += ("Apache-2.0", url("http://www.apache.org/licenses/LICENSE-2.0"))

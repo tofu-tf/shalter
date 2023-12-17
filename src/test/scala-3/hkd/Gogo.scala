@@ -1,7 +1,8 @@
 package hkd
-import tc._
-import scala.language.experimental.namedTypeArguments
 
+import cats.arrow.FunctionK
+import cats.tagless.syntax.all.*
+import tc._
 
 type Identity[+A] = A
 
@@ -41,15 +42,15 @@ def gogogo =
     rec = () => jup,
   )
 
-  val noxs = nox.mapK([A] => (a: A) => List(a))
-  val jups = jup.mapK[Identity, [A] =>> (A, Int)]([A] => (a: A) => (a, 1))
+  val noxs = nox.mapK(FunctionK.lift([A] => (a: A) => List(a)))
+  val jups = jup.mapK[[A] =>> (A, Int)](FunctionK.lift([A] => (a: A) => (a, 1)))
 
   println(summon[Names[Noxarpe]])
 
   val noxis = Noxarpe[[A] =>> Vector[Identity[A]]](
     name = Vector("Oleg", "Katya"),
     age = Vector(36, 30)
-  ).sequenceK[Vector, Identity]
+  ).sequenceK//[Vector, Identity]
 
   println(noxs)
   println(jups)
