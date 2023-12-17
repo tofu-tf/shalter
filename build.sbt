@@ -9,8 +9,6 @@ scalaVersion := scala3Version
 crossScalaVersions := Seq(scala3Version)
 libraryDependencies += ("org.typelevel"                 %% "cats-core"   % "2.10.0").cross(CrossVersion.for3Use2_13)
 libraryDependencies += ("org.typelevel"                 %% "cats-free"   % "2.10.0").cross(CrossVersion.for3Use2_13)
-libraryDependencies += ("org.typelevel"                 %% "cats-effect" % "2.5.5").cross(CrossVersion.for3Use2_13)
-libraryDependencies += ("ru.tinkoff"                    %% "tofu"        % "0.9.0").cross(CrossVersion.for3Use2_13)
 
 publishMavenStyle := true
 scmInfo := Some(

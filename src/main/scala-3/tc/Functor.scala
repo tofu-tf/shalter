@@ -1,4 +1,5 @@
 package tc
+
 import scala.language.experimental.namedTypeArguments
 
 type Identity[+A] = A
