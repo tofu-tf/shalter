@@ -1,6 +1,6 @@
 val scala3Version = "3.3.1"
 
-name := "socket"
+name := "shalter"
 version := "0.0.7"
 
 
@@ -13,8 +13,8 @@ libraryDependencies += ("org.typelevel" %% "cats-tagless-core" % "0.15.0")
 publishMavenStyle := true
 scmInfo := Some(
     ScmInfo(
-      url("https://github.com/tofu-tf/socket"),
-      "git@github.com:tofu-tf/socket.git"
+      url("https://github.com/tofu-tf/shalter"),
+      "git@github.com:tofu-tf/shalter.git"
     )
   )
 
