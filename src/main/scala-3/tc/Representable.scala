@@ -24,7 +24,7 @@ trait RepresentableK[U[_[_]]] extends ApplicativeK[U]:
       tabulate([A] => (rep: Rep[U, A]) => f[A](rep(left) , rep(right)))
 
 object RepresentableK: 
-  inline def derived[U[_[_]] <: Product]: RepresentableK[U] = deriveRepresentable
+  inline def derived[U[_[_]] <: Product : ApplyK]: RepresentableK[U] = deriveRepresentable
 
 trait TraversableK[U[_[_]]] extends FunctorK[U]:
   extension[F[_], G[+_], H[_]](uf: U[F])
@@ -43,4 +43,4 @@ trait Craft[U[_[_]]] extends RepresentableK[U] with TraversableK[U]:
       craft[G, H]([A] => (frep: Rep[U, A]) => f(frep(uf)))
 
 object Craft:
-  inline def derived[U[f[_]] <: Product]: Craft[U] = deriveCraft    
+  inline def derived[U[f[_]] <: Product: ApplyK]: Craft[U] = deriveCraft

@@ -3,13 +3,15 @@ package tc.derived
 import tc.*
 import cats.*
 import cats.data.Tuple2K
+import cats.tagless.ApplyK
+import cats.tagless.syntax.all.*
 import cats.syntax.all.*
 import hkd.*
 
 import scala.compiletime.*
 import scala.deriving.*
 
-inline def deriveCraft[U[f[_]] <: Product]: Craft[U] = 
+inline def deriveCraft[U[f[_]] <: Product: ApplyK]: Craft[U] =
     val pack = craftPack[U].toArray
     new Craft[U] {
       def craft[F[+_]: Applicative, G[_]](gain: [A] => Rep[U, A] => F[G[A]]): F[U[G]] = summonFrom {
@@ -30,9 +32,9 @@ inline def deriveCraft[U[f[_]] <: Product]: Craft[U] =
         case _ => error("can handle only case classes at the moment")
       }
 
-      override def productK[F[_], G[_]](af: U[F], ag: U[G]): U[[Z] =>> Tuple2K[F, G, Z]] = ???
+      override def productK[F[_], G[_]](af: U[F], ag: U[G]): U[[Z] =>> Tuple2K[F, G, Z]] = af.productK(ag)
 
-      override def mapK[F[_], G[_]](af: U[F])(fk: F ~> G): U[G] = ???
+      override def mapK[F[_], G[_]](af: U[F])(fk: F ~> G): U[G] = af.mapK(fk)
     }
 
 
@@ -76,9 +78,9 @@ given monoCraft[X]: Craft[[F[_]] =>> F[X]] with
 
   //def craft[F[+_] : Applicative, G[_]](gain: [A] => Rep[[F] =>> F[X], A] => F[G[A]]): F[G[X]] = ???
 
-  def productK[F[_], G[_]](af: F[X], ag: G[X]): Tuple2K[F, G, X] = ???
+  def productK[F[_], G[_]](af: F[X], ag: G[X]): Tuple2K[F, G, X] = Tuple2K(af, ag)
 
-  def mapK[F[_], G[_]](af: F[X])(fk: F ~> G): G[X] = ???
+  def mapK[F[_], G[_]](af: F[X])(fk: F ~> G): G[X] = fk.apply(af)
 
 
 

@@ -2,13 +2,15 @@ package tc.derived
 
 import cats.arrow.FunctionK
 import cats.data.Tuple2K
+import cats.tagless.ApplyK
+import cats.tagless.syntax.all.*
 import tc.*
 import hkd.*
 
 import scala.compiletime.*
 import scala.deriving.*
 
-inline def deriveRepresentable[U[_[_]] <: Product]: RepresentableK[U] = 
+inline def deriveRepresentable[U[_[_]] <: Product : ApplyK]: RepresentableK[U] =
     val pack = repPack[U].toArray
     new RepresentableK[U] {
       def tabulate[F[_]](gain: [A] => Rep[U, A] => F[A]) = summonFrom {
@@ -25,9 +27,9 @@ inline def deriveRepresentable[U[_[_]] <: Product]: RepresentableK[U] =
         case _ => error("can handle only case classes at the moment")
       }
 
-      def mapK[F[_], G[_]](af: U[F])(fk: FunctionK[F, G]): U[G] = ???
+      override def mapK[F[_], G[_]](af: U[F])(fk: FunctionK[F, G]): U[G] = af.mapK(fk)
 
-      override def productK[F[_], G[_]](af: U[F], ag: U[G]): U[[Z] =>> Tuple2K[F, G, Z]] = ???
+      override def productK[F[_], G[_]](af: U[F], ag: U[G]): U[[Z] =>> Tuple2K[F, G, Z]] = af.productK(ag)
     }
 
 
@@ -70,6 +72,6 @@ given monoRepresentable[X]: RepresentableK[[F[_]] =>> F[X]] with
   def tabulate[G[_]](gain: [A] => ([F[_]] => F[X] => F[A]) => G[A]): G[X] = 
     gain([G[_]] => (x: G[X]) => x)
 
-  def mapK[F[_], G[_]](af: F[X])(fk: FunctionK[F, G]): G[X] = ???
+  def mapK[F[_], G[_]](af: F[X])(fk: FunctionK[F, G]): G[X] = fk.apply(af)
 
-  def productK[F[_], G[_]](af: F[X], ag: G[X]): Tuple2K[F, G, X] = ???
+  def productK[F[_], G[_]](af: F[X], ag: G[X]): Tuple2K[F, G, X] = Tuple2K(af, ag)
